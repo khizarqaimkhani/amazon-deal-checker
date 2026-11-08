@@ -307,12 +307,12 @@ def make_note(r, settings):
             return f"Skip: loses ${abs(p):.2f} per unit after Amazon fees."
         if p is not None and (p < settings["min_profit"] or (roi or 0) < settings["target_roi"]):
             return f"Skip: only {money_line}, below your targets."
-        return "Skip: the risks outweigh the profit" + (f" ({', '.join(checks).lower()})." if checks else ".")
+        return "Skip: the risks outweigh the profit" + (f" ({', '.join(checks)})." if checks else ".")
     if r["final"] == "review":
         if r.get("reason_tag") == "low confidence":
             return f"Check by hand: the model is not sure. Numbers: {money_line}."
-        what = ", ".join(checks).lower() if checks else "the margin and listing details"
+        what = ", ".join(checks) if checks else "the margin and listing details"
         return f"Good numbers: {money_line}. Check first: {what}."
     if checks:
-        return f"Good deal: {money_line}. Keep an eye on: {', '.join(checks).lower()}."
+        return f"Good deal: {money_line}. Keep an eye on: {', '.join(checks)}."
     return f"Strong deal: {money_line} and no risks found."
