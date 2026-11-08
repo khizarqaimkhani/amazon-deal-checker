@@ -182,7 +182,11 @@ def fill_one(client, r, supplier, settings):
             },
             "risk_flags": {
                 "type": "multiselect",
-                "description": "Select only the risks this product actually has, based on the sheet",
+                "description": (
+                    "Select only the risks this product actually has, based on the sheet. "
+                    "Wireless earbuds, power banks, rechargeable lamps and other products with "
+                    "lithium batteries count as battery items."
+                ),
                 "options": RISK_FLAGS,
                 "threshold": 0.6,
             },
@@ -196,8 +200,10 @@ def fill_one(client, r, supplier, settings):
             "buyer_note": {
                 "type": "generate",
                 "description": (
-                    "One short, plain-English sentence for the buyer: the single biggest reason "
-                    "to buy or to avoid this product."
+                    "One short, plain-English sentence for the buyer. If the product has any risk "
+                    "(missing UPC, expiry, discontinued stock, battery item, gating or a restricted "
+                    "brand) or a thin or negative margin, name that risk first. Only call it a good "
+                    "buy when there is no risk at all."
                 ),
                 "max_tokens": 45,
                 "format": "text",
