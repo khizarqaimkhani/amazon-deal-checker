@@ -197,13 +197,13 @@ def fill_one(client, r, supplier, settings):
                     "can list it), e.g. grocery, topical beauty or skincare, or a restricted brand?"
                 ),
             },
-            "buyer_note": {
+            "ask_supplier": {
                 "type": "generate",
                 "description": (
-                    "One short, plain-English sentence for the buyer. If the product has any risk "
-                    "(missing UPC, expiry, discontinued stock, battery item, gating or a restricted "
-                    "brand) or a thin or negative margin, name that risk first. Only call it a good "
-                    "buy when there is no risk at all."
+                    "One short, specific question the buyer should ask this supplier before "
+                    "ordering this product, based on what the sheet is missing or what looks "
+                    "risky (for example the exact expiry date, the UPC, a brand authorization "
+                    "letter, battery safety documents, or a lower price for a thin margin)."
                 ),
                 "max_tokens": 45,
                 "format": "text",
@@ -218,7 +218,7 @@ def fill_one(client, r, supplier, settings):
     r["category"] = clean(_unwrap(f.get("category"))) or "Other"
     r["flags"] = [x for x in flags if x]
     r["needs_ungating"] = bool(_unwrap(f.get("needs_ungating")))
-    r["buyer_note"] = clean(_unwrap(f.get("buyer_note")))
+    r["ask_supplier"] = clean(_unwrap(f.get("ask_supplier")))
     return raw
 
 
@@ -289,4 +289,30 @@ def apply_guardrails(rows, settings):
             r["final"], r["reason_tag"] = "skip", "rule: no profit"
         elif r["confidence"] is not None and r["confidence"] < settings["min_confidence"] and r["verdict"] != "review":
             r["final"], r["reason_tag"] = "review", "low confidence"
+        r["buyer_note"] = make_note(r, settings)
     return rows
+
+
+def make_note(r, settings):
+    """A one-line reason built from the final verdict, the numbers and Fill's flags,
+    so the note can never disagree with the decision."""
+    p, roi = r.get("profit_n"), r.get("roi_n")
+    money_line = f"${p:.2f} profit per unit ({roi}% ROI)" if p is not None else "profit unknown"
+    checks = list(r.get("flags") or [])
+    if r.get("needs_ungating"):
+        checks.append("Amazon approval needed")
+    checks = [c for c in checks if c != "Profit margin too thin"]
+    if r["final"] == "skip":
+        if p is not None and p <= 0:
+            return f"Skip: loses ${abs(p):.2f} per unit after Amazon fees."
+        if p is not None and (p < settings["min_profit"] or (roi or 0) < settings["target_roi"]):
+            return f"Skip: only {money_line}, below your targets."
+        return "Skip: the risks outweigh the profit" + (f" ({', '.join(checks).lower()})." if checks else ".")
+    if r["final"] == "review":
+        if r.get("reason_tag") == "low confidence":
+            return f"Check by hand: the model is not sure. Numbers: {money_line}."
+        what = ", ".join(checks).lower() if checks else "the margin and listing details"
+        return f"Good numbers ({money_line}), but check first: {what}."
+    if checks:
+        return f"Good deal: {money_line}. Keep an eye on: {', '.join(checks).lower()}."
+    return f"Strong deal: {money_line} and no risks found."

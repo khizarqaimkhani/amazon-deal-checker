@@ -1,3 +1,4 @@
+import html
 import json
 import os
 from pathlib import Path
@@ -41,10 +42,15 @@ st.markdown(
 .flag {display:inline-block; background:#f1f3f6; color:#39414d; border-radius:6px;
        padding:.1rem .45rem; font-size:.78rem; margin:0 .3rem .3rem 0;}
 .note {font-size:.92rem; margin-top:.35rem;}
+.ask {font-size:.86rem; color:#39414d; margin-top:.3rem;}
 </style>
 """,
     unsafe_allow_html=True,
 )
+
+
+def esc(v):
+    return html.escape(str(v)) if v else ""
 
 
 def get_key():
@@ -168,7 +174,7 @@ if res:
         tag = f" · {r['reason_tag']}" if r["reason_tag"] else ""
         roi = f"{r['roi_n']}%" if r["roi_n"] is not None else "—"
         profit = f"${r['profit_n']:.2f}" if r["profit_n"] is not None else "—"
-        flags = "".join(f'<span class="flag">⚠ {f}</span>' for f in r.get("flags", []))
+        flags = "".join(f'<span class="flag">⚠ {esc(f)}</span>' for f in r.get("flags", []))
         if r.get("needs_ungating"):
             flags += '<span class="flag">🔒 Usually needs approval</span>'
         st.markdown(
@@ -176,11 +182,12 @@ if res:
 <div class="card">
 <span class="badge" style="color:{fg};background:{bg}">{label}</span>
 <span style="color:#5b6270;font-size:.85rem;margin-left:.4rem">{conf}{tag}</span>
-<div class="title" style="margin-top:.35rem">{r['product']}</div>
-<div class="meta">{r['brand'] or '—'} · {r.get('category', '')} · UPC {r['upc'] or 'missing'} ·
-cost {r['unit_cost'] or '—'} → MSRP {r['msrp'] or '—'} · <b>profit {profit}/unit · ROI {roi}</b> · MOQ {r['moq'] or '—'}</div>
+<div class="title" style="margin-top:.35rem">{esc(r['product'])}</div>
+<div class="meta">{esc(r['brand']) or '—'} · {esc(r.get('category', ''))} · UPC {esc(r['upc']) or 'missing'} ·
+cost {esc(r['unit_cost']) or '—'} → MSRP {esc(r['msrp']) or '—'} · <b>profit {profit}/unit · ROI {roi}</b> · MOQ {esc(r['moq']) or '—'}</div>
 {flags}
-<div class="note">{r.get('buyer_note', '')}</div>
+<div class="note">{esc(r.get('buyer_note', ''))}</div>
+{f'<div class="ask">💬 Ask the supplier: {esc(r["ask_supplier"])}</div>' if r.get("ask_supplier") and r["final"] != "skip" else ""}
 </div>
 """,
             unsafe_allow_html=True,
@@ -199,7 +206,7 @@ cost {r['unit_cost'] or '—'} → MSRP {r['msrp'] or '—'} · <b>profit {profi
                 "msrp": r["msrp_n"], "est_fees": r["fees_n"], "profit_per_unit": r["profit_n"],
                 "roi_pct": r["roi_n"], "moq": r["moq_n"], "category": r.get("category"),
                 "risk_flags": "; ".join(r.get("flags", [])), "needs_ungating": r.get("needs_ungating"),
-                "buyer_note": r.get("buyer_note"),
+                "buyer_note": r.get("buyer_note"), "ask_supplier": r.get("ask_supplier"),
             }
             for r in rows
         ]

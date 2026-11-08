@@ -26,12 +26,16 @@ Three Clocked endpoints work as a chain. Each one's output changes what the next
 | Step | Endpoint | What it does in the app |
 |---|---|---|
 | 1 | **Extract** `/clocked/extract` | Reads the supplier name and every product row as a list of records (brand, product, UPC, case pack, unit cost, MSRP, MOQ, notes). Works on images, PDFs and text. Missing values stay empty instead of being guessed — e.g. a missing UPC becomes a flag. |
-| 2 | **Fill** `/clocked/fill` | Turns each row (plus the computed fees, profit and ROI) into a full record in one call: Amazon **category** (choice), **risk flags** (multiselect: expiring soon, discontinued, UPC missing, brand may be restricted, battery/hazmat, thin margin), **needs ungating** (yes/no) and a one-line **buyer note** (generated). |
+| 2 | **Fill** `/clocked/fill` | Turns each row (plus the computed fees, profit and ROI) into a full record in one call: Amazon **category** (choice), **risk flags** (multiselect: expiring soon, discontinued, UPC missing, brand may be restricted, battery/hazmat, thin margin), **needs ungating** (yes/no) and a short **question to ask the supplier** before ordering (generated). |
 | 3 | **Decide** `/clocked/decide` | One request with one document per product. Each question reads its own product sheet — including Fill's flags — and returns **buy / review / skip** with the probability of each option. |
 
 On top of the model, two plain rules keep it safe:
 - a product with zero or negative profit can never be a BUY;
 - if Decide is less sure than the sidebar cut-off, the product goes to REVIEW for a person.
+
+Each card's one-line reason is built from the final verdict, the numbers and Fill's flags, so the note can never disagree with the decision.
+
+> The app runs on Streamlit Community Cloud's free tier. If it has been idle, click "Yes, get this app back up" and give it ~30 seconds.
 
 The **"Under the hood"** panel shows the raw Clocked responses and the credits used for each call.
 
