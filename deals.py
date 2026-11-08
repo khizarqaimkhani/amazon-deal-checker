@@ -312,7 +312,7 @@ def make_note(r, settings):
         if r.get("reason_tag") == "low confidence":
             return f"Check by hand: the model is not sure. Numbers: {money_line}."
         what = ", ".join(checks).lower() if checks else "the margin and listing details"
-        return f"Good numbers ({money_line}), but check first: {what}."
+        return f"Good numbers: {money_line}. Check first: {what}."
     if checks:
         return f"Good deal: {money_line}. Keep an eye on: {', '.join(checks).lower()}."
     return f"Strong deal: {money_line} and no risks found."
